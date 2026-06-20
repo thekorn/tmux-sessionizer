@@ -1,5 +1,6 @@
 # Set default values if not already set
 : ${TMUX_SESSIONIZER_DIRS:="$HOME/Developer"}
+: ${TMUX_SESSIONIZER_EXTRA_DIRS:=""}
 : ${TMUX_SESSIONIZER_BIND:="C-f"}
 : ${TMUX_SESSIONIZER_DEPTH:=2}
 
@@ -8,9 +9,15 @@ function _tmux_sessionizer() {
 
   # Check if fd command exists, otherwise use find
   if (( ${+commands[fd]} )); then
-    selected_dir=$(fd . ${(z)TMUX_SESSIONIZER_DIRS} -t d -d ${TMUX_SESSIONIZER_DEPTH} 2>/dev/null | fzf --reverse)
+    selected_dir=$({
+        fd . ${(z)TMUX_SESSIONIZER_DIRS} -t d -d ${TMUX_SESSIONIZER_DEPTH} 2>/dev/null
+        printf '%s\n' ${(z)TMUX_SESSIONIZER_EXTRA_DIRS}
+    } | sed '/^$/d' | sed "s;$HOME;~;" | fzf --reverse)
   else
-    selected_dir=$(find ${(z)TMUX_SESSIONIZER_DIRS} -mindepth 1 -maxdepth ${TMUX_SESSIONIZER_DEPTH} -type d 2>/dev/null | fzf --reverse)
+    selected_dir=$({
+        find ${(z)TMUX_SESSIONIZER_DIRS} -mindepth 1 -maxdepth ${TMUX_SESSIONIZER_DEPTH} -type d 2>/dev/null
+        printf '%s\n' ${(z)TMUX_SESSIONIZER_EXTRA_DIRS}
+    } | sed '/^$/d' | sed "s;$HOME;~;" | fzf --reverse)
   fi
 
   if [[ -z "$selected_dir" ]]; then
@@ -42,19 +49,19 @@ function _tmux_sessionizer() {
 function init() {
   # Check dependencies
   local -a missing_deps=()
-  
+
   if ! (( ${+commands[tmux]} )); then
     missing_deps+=( tmux )
   fi
-  
+
   if ! (( ${+commands[fzf]} )); then
     missing_deps+=( fzf )
   fi
-  
+
   if ! (( ${+commands[fd]} )) && ! (( ${+commands[find]} )); then
     missing_deps+=( fd )
   fi
-  
+
   if (( ${#missing_deps} > 0 )); then
     print -P "%F{red}Tmux Sessionizer missing required dependencies:%f %F{yellow}${(j:, :)missing_deps}%f" >&2
     return 1
