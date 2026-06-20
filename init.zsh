@@ -20,6 +20,8 @@ function _tmux_sessionizer() {
     } | sed '/^$/d' | sed "s;$HOME;~;" | fzf --reverse)
   fi
 
+  selected_dir=${~selected_dir}
+
   if [[ -z "$selected_dir" ]]; then
     return 0
   fi
