@@ -7,17 +7,21 @@
 function _tmux_sessionizer() {
   local selected_dir
 
-  # Check if fd command exists, otherwise use find
-  if (( ${+commands[fd]} )); then
-    selected_dir=$({
-        fd . ${(z)TMUX_SESSIONIZER_DIRS} -t d -d ${TMUX_SESSIONIZER_DEPTH} 2>/dev/null
-        printf '%s\n' ${(z)TMUX_SESSIONIZER_EXTRA_DIRS}
-    } | sed '/^$/d' | sed "s;$HOME;~;" | fzf --reverse)
+  if [[ $# -eq 1 ]]; then
+    selected_dir=$1
   else
-    selected_dir=$({
-        find ${(z)TMUX_SESSIONIZER_DIRS} -mindepth 1 -maxdepth ${TMUX_SESSIONIZER_DEPTH} -type d 2>/dev/null
-        printf '%s\n' ${(z)TMUX_SESSIONIZER_EXTRA_DIRS}
-    } | sed '/^$/d' | sed "s;$HOME;~;" | fzf --reverse)
+    # Check if fd command exists, otherwise use find
+    if (( ${+commands[fd]} )); then
+        selected_dir=$({
+            fd . ${(z)TMUX_SESSIONIZER_DIRS} -t d -d ${TMUX_SESSIONIZER_DEPTH} 2>/dev/null
+            printf '%s\n' ${(z)TMUX_SESSIONIZER_EXTRA_DIRS}
+        } | sed '/^$/d' | sed "s;$HOME;~;" | fzf --reverse)
+    else
+        selected_dir=$({
+            find ${(z)TMUX_SESSIONIZER_DIRS} -mindepth 1 -maxdepth ${TMUX_SESSIONIZER_DEPTH} -type d 2>/dev/null
+            printf '%s\n' ${(z)TMUX_SESSIONIZER_EXTRA_DIRS}
+        } | sed '/^$/d' | sed "s;$HOME;~;" | fzf --reverse)
+    fi
   fi
 
   selected_dir=${~selected_dir}
